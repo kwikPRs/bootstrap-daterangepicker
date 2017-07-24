@@ -436,8 +436,7 @@
                 'click.daterangepicker': $.proxy(this.show, this),
                 'focus.daterangepicker': $.proxy(this.show, this),
                 'keyup.daterangepicker': $.proxy(this.elementChanged, this),
-                'keydown.daterangepicker': $.proxy(this.keydown, this),
-                'keypress.daterangepicker': $.proxy(this.keypress, this)
+                'keydown.daterangepicker': $.proxy(this.keydown, this)
             });
         } else {
             this.element.on('click.daterangepicker', $.proxy(this.toggle, this));
@@ -1128,30 +1127,6 @@
         hide: function(e) {
             if (!this.isShowing) return;
 
-            // if (this.autoApply) {
-            //     var dateString = [
-            //         this.container.find('input[name=daterangepicker_start]').val(),
-            //         this.container.find('input[name=daterangepicker_end]').val()
-            //     ];
-
-            //     if (dateString.length === 2) {
-            //         start = moment(dateString[0], this.locale.format);
-            //         end = moment(dateString[1], this.locale.format);
-            //     }
-
-            //     if (this.singleDatePicker || start === null || end === null) {
-            //         start = moment(this.element.val(), this.locale.format);
-            //         end = start;
-            //     }
-
-            //     if (start.isValid() || end.isValid()) {
-            //         this.setStartDate(start);
-            //         this.setEndDate(end);
-
-            //         this.element.trigger('apply.daterangepicker', this);
-            //     }
-            // }
-
             //incomplete date selection, revert to last values
             if (!this.endDate) {
                 this.startDate = this.oldStartDate.clone();
@@ -1545,6 +1520,29 @@
             }
 
             this.updateView();
+            if (this.autoApply) {
+                var dateString = [
+                    this.container.find('input[name=daterangepicker_start]').val(),
+                    this.container.find('input[name=daterangepicker_end]').val()
+                ];
+
+                if (dateString.length === 2) {
+                    start = moment(dateString[0], this.locale.format);
+                    end = moment(dateString[1], this.locale.format);
+                }
+
+                if (this.singleDatePicker || start === null || end === null) {
+                    start = moment(this.element.val(), this.locale.format);
+                    end = start;
+                }
+
+                if (start.isValid() || end.isValid()) {
+                    this.setStartDate(start);
+                    this.setEndDate(end);
+
+                    this.element.trigger('apply.daterangepicker', this);
+                }
+            }
         },
 
         formInputsFocused: function(e) {
@@ -1615,33 +1613,6 @@
             //hide on tab or enter
             if ((e.keyCode === 9) || (e.keyCode === 13)) {
                 this.hide();
-            }
-        },
-
-        keypress: function(e) {
-            if (e.keyCode == 13 && this.autoApply) {
-                var dateString = [
-                    this.container.find('input[name=daterangepicker_start]').val(),
-                    this.container.find('input[name=daterangepicker_end]').val()
-                ];
-
-                if (dateString.length === 2) {
-                    start = moment(dateString[0], this.locale.format);
-                    end = moment(dateString[1], this.locale.format);
-                }
-
-                if (this.singleDatePicker || start === null || end === null) {
-                    start = moment(this.element.val(), this.locale.format);
-                    end = start;
-                }
-
-                if (start.isValid() || end.isValid()) {
-                    this.setStartDate(start);
-                    this.setEndDate(end);
-
-                    this.element.trigger('apply.daterangepicker', this);
-                }
-                
             }
         },
 
