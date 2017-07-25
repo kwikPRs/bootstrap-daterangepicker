@@ -10,6 +10,7 @@
     if (typeof define === 'function' && define.amd) {
         // AMD. Make globaly available as well
         define(['moment', 'jquery'], function (moment, jquery) {
+            if (!jquery.fn) jquery.fn = {}; // webpack server rendering
             return (root.daterangepicker = factory(moment, jquery));
         });
     } else if (typeof module === 'object' && module.exports) {
@@ -20,7 +21,8 @@
             jQuery = require('jquery');
             if (!jQuery.fn) jQuery.fn = {};
         }
-        module.exports = factory(require('moment'), jQuery);
+        var moment = (typeof window != 'undefined' && typeof window.moment != 'undefined') ? window.moment : require('moment');
+        module.exports = factory(moment, jQuery);
     } else {
         // Browser globals
         root.daterangepicker = factory(root.moment, root.jQuery);
@@ -49,6 +51,7 @@
         this.linkedCalendars = true;
         this.autoUpdateInput = true;
         this.alwaysShowCalendars = false;
+        this.liveUpdating = true;
         this.ranges = {};
 
         this.opens = 'right';
@@ -270,6 +273,8 @@
 
         if (typeof options.alwaysShowCalendars === 'boolean')
             this.alwaysShowCalendars = options.alwaysShowCalendars;
+        if (typeof options.liveUpdating === 'boolean')
+            this.liveUpdating = options.liveUpdating;
 
         // update day names order to firstDay
         if (this.locale.firstDay != 0) {
@@ -431,6 +436,10 @@
             .on('mouseenter.daterangepicker', 'li', $.proxy(this.hoverRange, this))
             .on('mouseleave.daterangepicker', 'li', $.proxy(this.updateFormInputs, this));
 
+        if(this.liveUpdating) {
+            this.container.find('[name=daterangepicker_start]').add('[name=daterangepicker_end]')
+                .on('keyup.daterangepicker', $.proxy(this.formInputsChanged, this));
+        }
         if (this.element.is('input') || this.element.is('button')) {
             this.element.on({
                 'click.daterangepicker': $.proxy(this.show, this),
@@ -1503,7 +1512,17 @@
             var start = moment(this.container.find('input[name="daterangepicker_start"]').val(), this.locale.format);
             var end = moment(this.container.find('input[name="daterangepicker_end"]').val(), this.locale.format);
 
-            if (start.isValid() && end.isValid()) {
+            // avoiding formatting issues when length of years is involved
+            var yearLengthsAreValid = 0;
+            if(this.liveUpdating){
+                if (start.year().toString().length + end.year().toString().length === 8){
+                    yearLengthsAreValid = 1;
+                }
+            } else {
+                yearLengthsAreValid = 1;
+            }
+ 
+            if (start.isValid() && end.isValid() && yearLengthsAreValid) {
 
                 if (isRight && end.isBefore(start))
                     start = end.clone();
@@ -1542,6 +1561,7 @@
 
                     this.element.trigger('apply.daterangepicker', this);
                 }
+                this.hide();
             }
         },
 
