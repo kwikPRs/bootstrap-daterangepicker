@@ -51,7 +51,6 @@
         this.linkedCalendars = true;
         this.autoUpdateInput = true;
         this.alwaysShowCalendars = false;
-        this.liveUpdating = true;
         this.ranges = {};
 
         this.opens = 'right';
@@ -273,8 +272,6 @@
 
         if (typeof options.alwaysShowCalendars === 'boolean')
             this.alwaysShowCalendars = options.alwaysShowCalendars;
-        if (typeof options.liveUpdating === 'boolean')
-            this.liveUpdating = options.liveUpdating;
 
         // update day names order to firstDay
         if (this.locale.firstDay != 0) {
@@ -436,10 +433,6 @@
             .on('mouseenter.daterangepicker', 'li', $.proxy(this.hoverRange, this))
             .on('mouseleave.daterangepicker', 'li', $.proxy(this.updateFormInputs, this));
 
-        if(this.liveUpdating) {
-            this.container.find('[name=daterangepicker_start]').add('[name=daterangepicker_end]')
-                .on('keyup.daterangepicker', $.proxy(this.formInputsChanged, this));
-        }
         if (this.element.is('input') || this.element.is('button')) {
             this.element.on({
                 'click.daterangepicker': $.proxy(this.show, this),
@@ -1154,6 +1147,31 @@
             this.container.hide();
             this.element.trigger('hide.daterangepicker', this);
             this.isShowing = false;
+
+            if (this.autoApply) {
+                var dateString = [
+                    this.container.find('input[name=daterangepicker_start]').val(),
+                    this.container.find('input[name=daterangepicker_end]').val()
+                ];
+
+                if (dateString.length === 2) {
+                    start = moment(dateString[0], this.locale.format);
+                    end = moment(dateString[1], this.locale.format);
+                }
+
+                if (this.singleDatePicker || start === null || end === null) {
+                    start = moment(this.element.val(), this.locale.format);
+                    end = start;
+                }
+
+                if (start.isValid() || end.isValid()) {
+                    this.setStartDate(start);
+                    this.setEndDate(end);
+
+                    this.element.trigger('apply.daterangepicker', this);
+                    this.hide();
+                }
+            }
         },
 
         toggle: function(e) {
@@ -1511,18 +1529,8 @@
             var isRight = $(e.target).closest('.calendar').hasClass('right');
             var start = moment(this.container.find('input[name="daterangepicker_start"]').val(), this.locale.format);
             var end = moment(this.container.find('input[name="daterangepicker_end"]').val(), this.locale.format);
-
-            // avoiding formatting issues when length of years is involved
-            var yearLengthsAreValid = 0;
-            if(this.liveUpdating){
-                if (start.year().toString().length + end.year().toString().length === 8){
-                    yearLengthsAreValid = 1;
-                }
-            } else {
-                yearLengthsAreValid = 1;
-            }
  
-            if (start.isValid() && end.isValid() && yearLengthsAreValid) {
+            if (start.isValid() && end.isValid()) {
 
                 if (isRight && end.isBefore(start))
                     start = end.clone();
@@ -1539,30 +1547,6 @@
             }
 
             this.updateView();
-            if (this.autoApply) {
-                var dateString = [
-                    this.container.find('input[name=daterangepicker_start]').val(),
-                    this.container.find('input[name=daterangepicker_end]').val()
-                ];
-
-                if (dateString.length === 2) {
-                    start = moment(dateString[0], this.locale.format);
-                    end = moment(dateString[1], this.locale.format);
-                }
-
-                if (this.singleDatePicker || start === null || end === null) {
-                    start = moment(this.element.val(), this.locale.format);
-                    end = start;
-                }
-
-                if (start.isValid() || end.isValid()) {
-                    this.setStartDate(start);
-                    this.setEndDate(end);
-
-                    this.element.trigger('apply.daterangepicker', this);
-                }
-                this.hide();
-            }
         },
 
         formInputsFocused: function(e) {
